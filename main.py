@@ -2,48 +2,62 @@ from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from collections import defaultdict
 import redis
-import argparse
 import os
+import sys
 
-URL = os.environ['REDIS']
+URL = ""
+
+if sys.argv[1] and (urlparse(sys.argv[1]).scheme == 'redis'):
+        URL = sys.argv[1]
+else:
+    print("You need a Redis connection string to make this work!")
 
 def client_connect(url):
-    """connect to redis"""
-    parsed = urlparse(url)
-    connect = redis.StrictRedis(
-        host=parsed.hostname,
-        port=parsed.port,
-        password=parsed.password,
+    "parse the connection string and connect to redis"
+
+    parsed_url = urlparse(url)
+    connection_pool = redis.StrictRedis(
+        host = parsed_url.hostname,
+        port = parsed_url.port,
+        password = parsed_url.password,
         decode_responses=True)
 
-    return connect
+    return connection_pool
 
-def get_info(red):
-    """accesses redis info after client_connect"""
-    return red.info()
+class Stats:
+    "responsible for exposing the info that's needed from Redis"
 
-def memory(info):
-    """getting the memory stats from Redis"""
-    db_display_info = defaultdict(int)
-    # system memory
-    db_display_info['sys_memory'] = info['total_system_memory']
-    # system ram
-    db_display_info['ram'] = info['maxmemory']
+    def __init__(self, connection):
+        conn = connection
+        self.info = conn.info()
 
-    return db_display_info
+    def _memory(self):
+        "getting the memory stats from Redis"
+        db_memory = defaultdict(int)
 
-def time(info):
-    """getting the time stats from redis"""
-    db_time = defaultdict(str)
-    # last saved time 
-    db_time['last_save_time'] = datetime.fromtimestamp(info['rdb_last_save_time']).strftime("%b %d, %Y, %H:%M:%S")
-    # uptime in seconds
-    db_time['uptime'] = timedelta(seconds=info['uptime_in_seconds'])
-    return db_time
+        db_memory['sys_memory'] = self.info['total_system_memory'] # system memory
+        db_memory['ram'] = self.info['maxmemory'] # ram 
+
+        return db_memory
+
+    def _time(self):
+        "getting the time stats from redis"
+        db_time = defaultdict(str)
+
+        saved_time = datetime.fromtimestamp(self.info['rdb_last_save_time'])
+        formatted_time = saved_time.strftime('%b %d, %Y, %H:%M:%S')
+        db_time['last_save_time'] = formatted_time
+
+        db_time['uptime'] = timedelta(seconds = self.info['uptime_in_seconds'])
+
+        return db_time
+
+    def print_stats(self):
+        "prints the results from the stats functions"
+        print({**self._memory(), **self._time()})
 
 
 if __name__ == '__main__':
-    conn = client_connect(URL)
-    info = get_info(conn)
-    print(memory(info))
-    print(time(info))
+    client = client_connect(URL)
+    stats = Stats(client)
+    stats.print_stats()
