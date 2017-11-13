@@ -22,4 +22,5 @@ The project is in development now. A checklist of what's going to be covered by 
     - [ ] Show reads
     - [ ] Show writes
     - [ ] Show deletes
+    
 _... more to come._
