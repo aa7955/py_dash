@@ -1,5 +1,4 @@
-# PyDash
-## A dashboard for Redis written in Python
+# PyDash - A dashboard for Redis written in Python
 
 This is my first attempt at writing a program in Python. It's a command-line application that takes in a Redis URI, parses it and gives you real-time statistics about your Redis database in your terminal.
 
@@ -12,7 +11,7 @@ python3 main.py redis://connection.string.here
 
 If you don't have a connection string starting with `redis://`, it won't work.
 
-### Updates
+## Updates
 The project is in development now. A checklist of what's going to be covered by the application is:
 
 - [x] Connecting to Redis
