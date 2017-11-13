@@ -16,9 +16,11 @@ If you don't have a connection string starting with `redis://`, it won't work.
 The project is in development now. A checklist of what's going to be covered by the application is:
 
 - [x] Connecting to Redis
-- [] Showing memory statistics - _in development_
-- [] Showing time statistics - _in development_
-- [] Showing real-time monitoring:
-    - [] Showing inserts
-    - [] Showing writes
+- [ ] Show memory statistics - _in development_
+- [ ] Show time statistics - _in development_
+- [ ] Show real-time monitoring:
+    - [ ] Show inserts
+    - [ ] Show reads
+    - [ ] Show writes
+    - [ ] Show deletes
 _... more to come._
