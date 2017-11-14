@@ -32,30 +32,30 @@ def client_connect(url):
 
     return connection_pool
 
-class Stats:
-    "responsible for exposing the info that's needed from Redis"
+class Memory:
+    """
+    Getting the memory stats from Redis.
+    See https://redis.io/topics/memory-optimization for more information.
+    Not all the stats from Redis INFO are represented here.
+
+    If an instance exceeds the available memory, the OS will start swapping and
+    old/unused sections of memory will be written to disk for newer memory sections.
+
+    TODO:
+    - Check if used_memory > total_system_memory to see if swapping has started.
+    If so, send an alert - maybe change the text color here?
+    """
 
     def __init__(self, connection):
         self.info = connection.info()
 
     def _memory(self):
-        """
-        Getting the memory stats from Redis. 
-        See https://redis.io/topics/memory-optimization for more information.
-        Not all the stats from Redis INFO are represented here.
-        
-        If an instance exceeds the available memory, the OS will start swapping and
-        old/unused sections of memory will be written to disk for newer memory sections.
 
-        TODO:
-         - Check if used_memory > total_system_memory to see if swapping has started. 
-        If so, send an alert - maybe change the text color here?
-        """
         db_memory = defaultdict(int)
 
         # used memory - total bytes allocated by Redis
-        db_memory['used_memory'] = self.info['used_memory'] 
-        
+        db_memory['used_memory'] = self.info['used_memory']
+
         # memory rss (resident set memory) see memory allocation
         db_memory['rss_memory'] = self.info['used_memory_rss']
 
@@ -70,10 +70,23 @@ class Stats:
 
         return db_memory
 
+    def print_stats(self):
+        "prints the results from the memory function"
+        print({**self._memory()})
+
+
+class Persistance:
+
+    """
+    Getting the time stats from Redis. These might be updated in real-time.
+    Need to figure out how much stress on the system this might have.
+    """
+
+    def __init__(self, connection):
+        self.info = connection.info()
+
     def _time(self):
-        """
-        Getting the time stats from Redis.
-        """
+
         db_time = defaultdict(str)
 
         saved_time = datetime.fromtimestamp(self.info['rdb_last_save_time'])
@@ -85,8 +98,39 @@ class Stats:
         return db_time
 
     def print_stats(self):
-        "prints the results from the stats functions"
-        print({**self._memory(), **self._time()})
+        "prints the results from the persistance function"
+        print({**self._time()})
+
+
+class Stats:
+
+    """
+    Have to figure out whether to merge all these classes together.
+    Essentially, some of these would be updating themselves in real-time while
+    others I am not entirely sure about. System stress for real-time statistics
+    is something I need to figure out here.
+    """
+
+    def __init__(self, connection):
+        self.info = connection.info()
+
+    def _stats(self):
+        """
+        Mirrors the Stats section from Redis INFO
+        """
+        db_stats = defaultdict(int)
+
+        db_stats['connections_received'] = self.info['total_connections_received'] 
+        db_stats['commands_processed'] = self.info['total_commands_processed'] 
+        db_stats['net_input_bytes'] = self.info['total_net_input_bytes'] 
+        db_stats['net_output_bytes'] = self.info['total_net_output_bytes'] 
+        db_stats['rejected_connections'] = self.info['rejected_connections']
+
+        return db_stats
+
+    def print_stats(self):
+        "prints the results from the stats function"
+        print({**self._stats()})
 
 
 if __name__ == '__main__':
