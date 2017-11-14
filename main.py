@@ -1,3 +1,11 @@
+"""
+PyDash is a Redis dashboard. It's not for production use and is solely used
+as a learning tool for learning Python. Some of the comments in the code
+are simply ideas that I have to create new features, or things that I 
+don't want to forget to add or look at further (i.e. TODOs). This is definitely 
+a work in progress. Disregard all shitty and non-standard code.
+"""
+
 from urllib.parse import urlparse
 from datetime import datetime, timedelta
 from collections import defaultdict
@@ -28,27 +36,51 @@ class Stats:
     "responsible for exposing the info that's needed from Redis"
 
     def __init__(self, connection):
-        conn = connection
-        self.info = conn.info()
+        self.info = connection.info()
 
     def _memory(self):
-        "getting the memory stats from Redis"
+        """
+        Getting the memory stats from Redis. 
+        See https://redis.io/topics/memory-optimization for more information.
+        Not all the stats from Redis INFO are represented here.
+        
+        If an instance exceeds the available memory, the OS will start swapping and
+        old/unused sections of memory will be written to disk for newer memory sections.
+
+        TODO:
+         - Check if used_memory > total_system_memory to see if swapping has started. 
+        If so, send an alert - maybe change the text color here?
+        """
         db_memory = defaultdict(int)
 
-        db_memory['sys_memory'] = self.info['total_system_memory'] # system memory
-        db_memory['ram'] = self.info['maxmemory'] # ram 
+        # used memory - total bytes allocated by Redis
+        db_memory['used_memory'] = self.info['used_memory'] 
+        
+        # memory rss (resident set memory) see memory allocation
+        db_memory['rss_memory'] = self.info['used_memory_rss']
+
+        # peak memory useage
+        db_memory['memory_peak'] = self.info['used_memory_peak']
+
+        # system memory used
+        db_memory['sys_memory'] = self.info['total_system_memory']
+
+        # RAM used
+        db_memory['ram'] = self.info['maxmemory']
 
         return db_memory
 
     def _time(self):
-        "getting the time stats from redis"
+        """
+        Getting the time stats from Redis.
+        """
         db_time = defaultdict(str)
 
         saved_time = datetime.fromtimestamp(self.info['rdb_last_save_time'])
         formatted_time = saved_time.strftime('%b %d, %Y, %H:%M:%S')
         db_time['last_save_time'] = formatted_time
 
-        db_time['uptime'] = timedelta(seconds = self.info['uptime_in_seconds'])
+        db_time['uptime'] = timedelta(seconds=self.info['uptime_in_seconds'])
 
         return db_time
 
