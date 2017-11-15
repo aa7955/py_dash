@@ -1,8 +1,8 @@
 """
 PyDash is a Redis dashboard. It's not for production use and is solely used
 as a learning tool for learning Python. Some of the comments in the code
-are simply ideas that I have to create new features, or things that I 
-don't want to forget to add or look at further (i.e. TODOs). This is definitely 
+are simply ideas that I have to create new features, or things that I
+don't want to forget to add or look at further (i.e. TODOs). This is definitely
 a work in progress. Disregard all shitty and non-standard code.
 """
 
@@ -13,24 +13,27 @@ import redis
 import os
 import sys
 
-URL = ""
-
-if sys.argv[1] and (urlparse(sys.argv[1]).scheme == 'redis'):
-        URL = sys.argv[1]
-else:
-    print("You need a Redis connection string to make this work!")
-
-def client_connect(url):
-    "parse the connection string and connect to redis"
-
-    parsed_url = urlparse(url)
-    connection_pool = redis.StrictRedis(
+def redis_connection(uri):
+    """
+    Parse the connection string and connect to Redis
+    """
+    parsed_url = urlparse(uri)
+    return redis.StrictRedis(
         host = parsed_url.hostname,
         port = parsed_url.port,
         password = parsed_url.password,
         decode_responses=True)
 
-    return connection_pool
+def client_connect(input):
+    """
+    Checking if the user supplies a valid Redis URI
+    """
+    if input and (urlparse(input).scheme == 'redis'):
+        uri = input
+        return redis_connection(uri)
+    else:
+        return "You need a Redis connection string to make this work!"
+        sys.exit()
 
 class Memory:
     """
@@ -72,11 +75,10 @@ class Memory:
 
     def print_stats(self):
         "prints the results from the memory function"
-        print({**self._memory()})
+        return {**self._memory()}
 
 
 class Persistance:
-
     """
     Getting the time stats from Redis. These might be updated in real-time.
     Need to figure out how much stress on the system this might have.
@@ -99,11 +101,10 @@ class Persistance:
 
     def print_stats(self):
         "prints the results from the persistance function"
-        print({**self._time()})
+        return {**self._time()}
 
 
 class Stats:
-
     """
     Have to figure out whether to merge all these classes together.
     Essentially, some of these would be updating themselves in real-time while
@@ -120,20 +121,19 @@ class Stats:
         """
         db_stats = defaultdict(int)
 
-        db_stats['connections_received'] = self.info['total_connections_received'] 
-        db_stats['commands_processed'] = self.info['total_commands_processed'] 
-        db_stats['net_input_bytes'] = self.info['total_net_input_bytes'] 
-        db_stats['net_output_bytes'] = self.info['total_net_output_bytes'] 
+        db_stats['connections_received'] = self.info['total_connections_received']
+        db_stats['commands_processed'] = self.info['total_commands_processed']
+        db_stats['net_input_bytes'] = self.info['total_net_input_bytes']
+        db_stats['net_output_bytes'] = self.info['total_net_output_bytes']
         db_stats['rejected_connections'] = self.info['rejected_connections']
 
         return db_stats
 
     def print_stats(self):
         "prints the results from the stats function"
-        print({**self._stats()})
+        return {**self._stats()}
 
 
 if __name__ == '__main__':
-    client = client_connect(URL)
-    stats = Stats(client)
-    stats.print_stats()
+    client = client_connect(sys.argv[1])
+    print(client)
