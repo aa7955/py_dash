@@ -13,24 +13,19 @@ import redis
 import os
 import sys
 
-def redis_connection(uri):
-    """
-    Parse the connection string and connect to Redis
-    """
-    parsed_url = urlparse(uri)
-    return redis.StrictRedis(
-        host = parsed_url.hostname,
-        port = parsed_url.port,
-        password = parsed_url.password,
-        decode_responses=True)
+# def redis_connection(uri):
+#     """
+#     Set up the Redis connection
+#     """
+#     return redis.StrictRedis.from_url(uri)
 
-def client_connect(input):
+def redis_connection(conn_string):
     """
-    Checking if the user supplies a valid Redis URI
+    - Set up a Redis Connection
+    - Checking if the user supplies a valid Redis URI
     """
-    if input and (urlparse(input).scheme == 'redis'):
-        uri = input
-        return redis_connection(uri)
+    if conn_string and (urlparse(conn_string).scheme == 'redis'):
+        return redis.StrictRedis.from_url(conn_string)
     else:
         return "You need a Redis connection string to make this work!"
         sys.exit()
@@ -135,5 +130,5 @@ class Stats:
 
 
 if __name__ == '__main__':
-    client = client_connect(sys.argv[1])
+    client = redis_connection(sys.argv[1])
     print(client)
