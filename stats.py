@@ -1,4 +1,6 @@
 from collections import defaultdict
+from connection import redis_connection
+import pprint
 
 class Stats:
     """
@@ -28,3 +30,9 @@ class Stats:
     def print_stats(self):
         "prints the results from the stats function"
         return {**self._stats()}
+
+
+def get_stats(conn_string):
+    conn = redis_connection(conn_string)
+    stats_info = Stats(conn)
+    return stats_info.print_stats()
